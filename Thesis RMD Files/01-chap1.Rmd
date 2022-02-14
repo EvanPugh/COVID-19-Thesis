@@ -1,0 +1,21 @@
+<!--
+This is for including Chapter 1.  Notice that it's also good practice to name your chunk.  This will help you debug potential issues as you knit.  The chunk above is called intro and the one below is called chapter1.  Feel free to change the name of the Rmd file as you wish, but don't forget to change it here from chap1.Rmd.
+-->
+
+<!--
+The {#rmd-basics} text after the chapter declaration will allow us to link throughout the document back to the beginning of Chapter 1.  These labels will automatically be generated (if not specified) by changing the spaces to hyphens and capital letters to lowercase.  Look for the reference to this label at the beginning of Chapter 2.
+-->
+
+# Context 
+
+The ongoing COVID-19 pandemic has been one of the biggest world altering events since the end of World War II, if not the biggest. Starting with a few cases in Wuhan, China at the end of 2019, the COVID-19 outbreak was declared a pandemic on March 11th, 2020 as worldwide spread began and by the end of the month, the number of global cases was nearly 800,000 and the United States alone had more than 140,000 confirmed cases. As of December 3rd, WHO reports that globally there have been are currently roughly 262.87 million confirmed cases and 5.2 million confirmed deaths worldwide In the US we have had over 48 million cases of COVID and are sitting at around 776,500 deaths. [@WHO]
+
+The number of cases and deaths haven’t been the only effects of this pandemic. In the United States alone, the number of home owners behind on their mortgage by three months or more increased 250% to over 2 million households, a level not seen since the peak of the Great Recession [@mortages], unemployment reached 14.8% (the highest level ever recorded since this was someone that began being tracked in 1948), and back in October 2020 the Congressional Budget Office projected a total of $7.6 trillion in lost output as a result of the pandemic over the next decade. [@cost]
+
+However, things could have been much worse. If it weren’t for the unprecedented speed at which a vaccine was developed and the different measures that have been taken to curb the spread of the virus, things could have been much, much worse. And while the prospect of things returning to pre-pandemic normalcy is still a far off prospect, it does feel like the pandemic is winding down, at least in the United States, and the tension surrounding the situation is lessening. 
+
+Unfortunately, it is fairly likely that many of use experience another pandemic of a scale similar to this or the 1918 Influenza pandemic. Due to the nature of zoonotic diseases like Influenza and COVID-19, odds of pandemics of these scales are only going to increase as humanity continues cutting down forests and building infrastructure. So we are not allowed to simply wash our hands off this mess and be done with it once things settle in to a new normal. It is our responsibility to learn what we did right and what we did wrong during this pandemic. 
+
+Since COVID-19 was officially declared a pandemic, there have been many studies analyzing the effectiveness of different measures taken to combat the virus, including vaccinations. However, most of those studies focus primarily on just one measure, or maybe a handful of measures. My goal with this thesis is to focus on analyzing the impact of our combined response to the pandemic rather than just looking at the impact of one specific policy. I think this is important because when we come up with policies for dealing with the pandemic, we aren't just implementing one policy or a small handful of measures. We are trying a ton of different things and I think it is important to examine the impact of those things as a whole rather than just as individual measures.
+
+

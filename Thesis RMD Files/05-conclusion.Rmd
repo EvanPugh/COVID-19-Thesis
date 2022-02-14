@@ -1,0 +1,425 @@
+# Thesis Discussion
+
+```{r,echo = FALSE}
+knitr::opts_chunk$set(fig.width=5.5, fig.height=4.5) 
+```
+
+
+
+## Overview
+
+First lets talk about the stats of the overall model itself. This model has an R^2 of 10.63%, meaning that this model explains 10.63% of the variation in predicted case growth. This is somewhat low compared to what you would find from other statistical models. I've even gotten better R^2 values with this very data set back when I was working with OLS and I had fewer variables. I think this low R^2 is justified for two main reasons. First is simply the nature of this pandemic. Aside from just the fact that it is tied heavily into human behavior and that dramatically lowers what you can expect for an R^2 value, COVID-19 is special because of the potential for super spreaders. Multiple studies have found that about 80% of secondary transmissions were caused by around 10 to 20% of infected individuals.[@spreader] And it is very difficult to predict when these super spreader events are going to happen, especially for models that can only take in limited data and interpret it in limited ways. The second factor is that it’s like this as a deliberate trade off I made to improve the precision of my coefficients. Decisions I made such as limiting my model to before the Delta variant dominated the US did help separate out the effects of the delta variant and my vaccination data, but at the cost of the overall predictive ability of my model. I do think this R^2 value could be improved given more time and data, but this is still something I’m satisfied with and believe is significant enough to be worth discussing.
+
+One of the issues my model does have is it’s limited spread. My predicted values for my training data have an IQR of 19.14, while the corresponding true values from my data set have an IQR of 64.79, nearly 3.5 times the IQR of my training data. Additionally, my predicted values max out at 195.8, while my true values max out at 668.4. Interestingly, this is a way bigger gap the difference between the minimum of my predicted values and the minimum of my true values (-361.2 and -603.6 respectively). These factors combined suggests my model has a hard time predicting the more extreme changes in cases, especially spikes rather than dips. This lines up with what I discussed previously about how my model just can’t predict occurrences like super spreader events. Together these lead me to believe the unexplained variation in my model has more to do with data that my model simply isn't accounting for and rather than because the coefficients my model has calculated are significantly off.
+
+Also, something that is important to note with this data is that the impact a variable has on a model compounds with itself. The value my model is predicting, case growth, is inherently based on what the current number of cases are. So if I implement some kind of policy that decreases the growth rate that means it decreases the number predicted for next week, and if that policy remains in place, then not only does it still continue to effect my model, but the decreases that it causes over the week will result in the starting point for next week’s predicted case growth to be smaller, meaning that it impacts the expected number of cases two weeks from now twice. So while something like a 5% change in case growth may not seem like much, it is a lot if that factor remains in place for a while.
+
+## Analysis of Secondary Significant Effects 
+
+So overall we found several variables that had a substantial impact on my model. In this section I’ll be going over all of the ones that had more than a +/-1% influence in the extreme change impact category, except for CaseGrowthRate, aggregated COVID-19 policy, and aggregated vaccinations. Those will be saved for later since those are the most important sections.
+ 
+To start off with something simple, HopsitalBedsCovidPercent. This variable represents the percentage of hospital beds that are taken up by people infected with COVID-19, and on the extreme change category it had an impact of +1.26%, although theoretically it could go as high as +6.32%. While people in hospital beds aren’t out there causing more cases of COVID-19, it is possible they spread a fair amount to people before they were hospitalized and it can be a sign that the situation with the pandemic is getting really bad in a state.
+
+Another fairly simple variable that manages to have a decent impact is state population, with an extreme impact of +2.26%. Interestingly, this variable seems to have a significantly larger impact on my model than the population of a county itself. My guess is that this is related to how some of the states that got hit the hardest by COVID-19 are the ones with large populations. The three most populated states in my model are California, Florida and New York, and all three of those states had some really severe COVID-19 waves (if Texas was in the model it would have been second, and Texas also had a big COVID-19 wave). My model gives all the counties in those states a +4.37%, +2.35% and +2.13% percent bonus just for their populations.
+
+Next up is total cases and deaths, both on a county and state level. Total cases per capita has an extreme impact of -7.72%, Total deaths per capita has an extreme impact of -4.32%, confirmed state cases has an extreme impact of -2.56%, and confirmed state cases has an extreme impact of -1.62%. My guess here is that these variable are representing a shift in the people who can catch COVID-19. People who have already caught COVID-19 are less likely to catch it again, and people who died from COVID-19 can’t catch it again for obvious reasons. There might also just be a time element here where these variables are acting as a proxy for how far into the pandemic we are and just the longer we’ve been dealing with the pandemic the better we are at dealing with it.
+
+
+The results of my COVID-19 testing data are a bit weird when you first look at them. My weekly testing per capita variable has an extreme impact of 1.14%, the test positive rate has an extreme impact of 0.052%, the lag of weekly testing per capita has an extreme impact of -1.17% and the lag of the is the test positive rate is -2.29%. The impact of testing per capita makes sense, as testing capacity increases we are better equipped to deal with the pandemic. But the positive test rate having a small (but positive) impact while the lag of the test positive rate having a negative impact on case growth is pretty odd considering that a high test positive rate is considered a major sign that things are going wrong. My guess is that the test positive rate being high is an indication that we are about to turn a corner on this situation soon, and that's what the lag is capturing. These variables also have overlap with the H2_Testing variable and therefore all the H_Sum variants and the 3 day lag of H2_Testing, so that potentially explains some of why this variable is weird.
+
+The delta variant is a bit weird in this data set because I’ve deliberately structured my data so that it doesn’t include data from when the delta variant makes up 40% or more of the cases of Delta in the region. This was necessary to untangle it from my vaccination data, and it paid off here because it resulted in a Delta variable coefficient that was roughly 6 times bigger than what it was in my old model that didn’t make this change. This gives us a Delta variant extreme impact of +4.02%. If you extrapolate with the Delta variant to values above 0.4 and look at the difference between when the Delta variant wasn’t in the US at all and when it became basically the only variant in the country, we get an impact of +12.52%. Now we shouldn’t take this variable as seriously as we take variables that aren’t extrapolated, but I do think it’s worth mentioning that an impact of +11.6%  seems to be pretty close to the opposite of the impact of our combined vaccination data, where a county that falls into the -11.5% to -16.8% range when you’re looking at the more “middle of the pack” data from my previous combined vaccination data in the results chapters. So it feels almost like the impact of people getting vaccinated has been canceled out by the impact of the Delta variant (and vice versa), which fits with how the data was extremely difficult to untangle.  
+
+The mobility data I’ve included is another example of data where each variable doesn’t really carry much weight on it’s own but combined together it does actually have a fairly significant impact. In order their isolated extreme impacts are retail and recreation at +1.65%, transit stations at +1.25%, residential areas at -0.93%, workplaces at +0.77%, parks at +0.33%, and groceries and pharmacies at 0.05%. This results in a combined extreme impact of people staying more at their homes rather than going to other locations of -4.83%. There is probably a fair amount of overlap between this and variables such as stay at home orders, cancellation of public events and workplace closings, so there is some fuzziness here, but it’s still a good tool and can account for things those other variables don’t, such as how rigidly are people actually following stay at home instructions.
+
+
+## Analysis of primary effects
+
+Overall the three variables are the ones that I feel are the most important and merit the most talking about. Let's start with CaseGrowthRate, since this is relevant to discussing the other two later.
+
+### Case Growth Rate Impact
+
+Since I'm including not just a variable representing the case growth rate, but also the case growth rate squared and cubed and they are multiplied by these different powers of ten, it can be a little tricky to see how they interact. To help visualization things, here are two graphs showing the impact of CaseGrowthRate on PredGrowthRate by showing it as just a raw change and by showing it as the percent change in the predicted growth rate.
+\newline
+
+```{r,echo=FALSE}
+library(ggplot2)
+x = c(-214:230)
+a = -0.08157925
+b = 0.01159026
+c = -0.06221209
+y = x*a +x^2/100*b+x^3/100000*c
+
+
+CaseGrowth <- as.data.frame(cbind(x,y))
+ggplot(CaseGrowth, aes(x = x, y= y)) +geom_line() +xlab("CaseGrowthRate")+ ylab("Impact on PredGrowthRate")
+
+ggplot(CaseGrowth, aes(x = x, y= y/x)) +geom_line() +xlab("CaseGrowthRate")+ ylab("Percentage change in PredGrowthRate (%)") + ylim(-0.25,0)
+
+Weeks  = c(0:24)
+CaseLoad = c(2,6,10,16,21,25,28,30,31,31,29,26,23,21,19,17,15,13,12,11,11,12,14,16,19)
+GrowthRate = c(0)
+for(i in 1:24){
+  GrowthRate[i] <- (log(CaseLoad[i+1]) - log(CaseLoad[i]))*100
+}
+
+NewGrowthRate <- 0.92*GrowthRate
+
+
+CaseGrowthImpact <- c(2)
+
+for(i in 2:25){
+  CaseGrowthImpact[i] <- CaseGrowthImpact[i-1]*exp(NewGrowthRate[i-1]/100)
+}
+
+
+CaseGrowthVis <- as.data.frame(cbind(Weeks,CaseLoad, CaseGrowthImpact))
+colnames(CaseGrowthVis)[1:3] <-c("Weeks", "No Rebound", "With Rebound")
+CaseGrowthVis <- tidyr::pivot_longer(CaseGrowthVis,cols = 2:3, names_to = "Type", values_to = "Cases")
+ggplot(data = CaseGrowthVis, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of Case Growth Rebound Effect", y = "Rolling Weekly Average", x = "Weeks")  + theme(legend.position="bottom")
+```
+
+
+
+So basically, if cases are currently on the rise, then based off of the CaseGrowthRate variable we'd expect it to start decreasing, and if cases are slowing down, then based off of the CaseGrowthRate variable we'd expect it to start increasing again. Additionally, this effect is increases the further away from 93.15 the current case growth rate gets (to clarify, it still always pulls variables to 0, it's just that the pull is weakest at 93.15). At 93.15 it only decreases the expected case growth by 7.6%, the effect remains under 10% for about 95% of the data, and for a few outliers it can get up to around to over a 20% decrease (that's only for around 0.05% of the data however). 
+
+
+Basically this variable acts like a rubber band, pulling the expected value closer to 0 and pulling harder for more extreme values. What this also means is that if there is something that changes the case growth rate, the impact of that change is also slowly reduced to 0. If you have something at the start of 2020 that decreases the case growth for a week by 40% but does nothing for the rest of the pandemic, that doesn't mean you're going to have 40% less cases for the entire rest of the pandemic. Which is something we need to keep in mind when discussing our next variables of interest, government policy.
+
+
+The flat rolling data for cases (as well as deaths) also has a pretty important impact. The rolling cases per capita average has an extreme impact of -14.5%, rolling death per capita average has an extreme impact of -3.53%, and rolling deaths per capita average for the state has an extreme impact of -5.67%. My interpretation is that this represents how there is a sort of soft cap to how high rolling averages can get and this controls from that outside of how quickly COVID-19 is growing. The higher a rolling average gets, the more likely it is to be reaching a peak and starting to turn around or for it to already be in active decline. 
+
+
+
+### Government Policy Impact
+
+While most of the individual impacts of the Government policy variables are small and understated, their impact together is truly immense. Their impact over time is interesting as well. Below I've laid out a hypothetical situation for a COVID-19 response from the a local government and tracked it over 20 weeks. The state government decides to implement aggressive restrictions starting two weeks into this time frame, then reduces it after 7 weeks, and lifts it all together after 16 weeks. There are no vaccinations. I imputed what the scenario would be like if there was no response from the government, then calculated how the situation would change if the government did respond before adjusting for the passage of time, then I added in the how in the rubber band effect. I sort of ball-parked these variables, couldn't really come up with a good way to actually use my model to calculate them.
+\newpage
+
+```{r, echo= FALSE}
+Weeks  = c(0:24)
+CaseLoad = c(2,6,10,16,21,25,28,30,31,31,29,26,23,21,19,17,15,13,12,11,11,12,14,16,19)
+GrowthRate = c(0)
+for(i in 1:24){
+  GrowthRate[i] <- (log(CaseLoad[i+1]) - log(CaseLoad[i]))*100
+}
+#Weeks <- c(Weeks[1:4],24,Weeks[5:21])
+#c(CaseLoad[1:4],15,CaseLoad[5:21])
+#CaseLoad <- c(CaseLoad[1:4],18,CaseLoad[5:21])
+
+#GrowthRate <- c(GrowthRate[1:3],(log(18)-log(12))*100,GrowthRate[4:20])
+#CaseLoad
+NewGrowthRate <- GrowthRate
+NewGrowthRate[3] <- GrowthRate[3] - 6.82
+NewGrowthRate[4:10] <- GrowthRate[4:10] - 15.59
+NewGrowthRate[11:17] <- GrowthRate[11:17] - 8.5
+NewGrowthRate[18:19] <- GrowthRate[18:19] + .059 # This line and the next are for how after a policy is lifted the lagged variable still remains in place.
+NewGrowthRate[20:21] <- GrowthRate[20:21] + .024
+
+GovtPolicy <- c(2)
+PolicyAndRecoil <- c(2)
+
+for(i in 2:25){
+  GovtPolicy[i] <- GovtPolicy[i-1]*exp(NewGrowthRate[i-1]/100)
+  PolicyAndRecoil[i] <- PolicyAndRecoil[i-1]*exp(NewGrowthRate[i-1]/100)
+  PolicyAndRecoil[i] <- PolicyAndRecoil[i]+ 0.08*(CaseLoad[i]-PolicyAndRecoil[i])
+}
+
+GovtPolicyVis <- as.data.frame(cbind(Weeks,CaseLoad, GovtPolicy,PolicyAndRecoil))
+colnames(GovtPolicyVis)[2:4] <-c("No Policy", "Just Policy", "Policy and Rebound")
+GovtPolicyVis <- tidyr::pivot_longer(GovtPolicyVis,cols = 2:4, names_to = "Type", values_to = "Cases")
+ggplot(data = GovtPolicyVis, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of Hypothetical Government Policy Intervention", y = "Rolling Weekly Average", x = "Weeks") + geom_vline(xintercept = 3, color = "Black") + geom_vline(xintercept = 10, color = "Dark Grey") + geom_vline(xintercept = 17, color = "Grey") + geom_label(aes(x = 4, label="Start of Intervention",y =30)) + geom_label(aes(x = 10, label="Reduction of Policy",y =20)) + geom_label(aes(x = 16, label="End of Policy",y =12)) + theme(legend.position="bottom")
+MediumRestriction <- PolicyAndRecoil
+
+```
+
+
+```{r}
+MediumRestriction[25]/CaseLoad[25]
+GovtPolicy[25]/CaseLoad[25]
+sum(MediumRestriction)/sum(CaseLoad)
+```
+
+So not only does government policy have a pretty big impact, but so does the time impact of this rubber banding effect. Without the decay of the policy's impact over time, cases after twenty weeks would be only 17.3% of what they would have been without any intervention. However, once you include the effect of time, it goes up to around 72.5% of the cases. Which is still really impactful. Overall this policy intervention, accounting for the time lag, decreased the total number of cases over this time span to 61.0% of what they otherwise would have been.
+
+It's also important when these policies are implemented and for how long. Cutting off a bad situation in the larval stage and keeping in place aggressive policies until the peak is behind can prevent things from getting out of hand, while implementing a policy too late and stopping or lessening it too early. Below I've graphed two slight variations of this same situation, one where the aggressive restrictions are implemented a week earlier and left in place before reduced to more mild restrictions one weeks later then removed a week later, and another where the aggressive restriction is implemented a week later and are reduced to mild restrictions a week earlier, and removed a week earlier.
+\newline
+
+```{r, echo=FALSE}
+NewGrowthRate <- GrowthRate
+NewGrowthRate[2] <- GrowthRate[2] - 6.82
+NewGrowthRate[3:12] <- GrowthRate[3:12] - 15.59
+NewGrowthRate[13:18] <- GrowthRate[13:18] - 8.5
+NewGrowthRate[19:20] <- GrowthRate[19:20] + .059
+NewGrowthRate[21:22] <- GrowthRate[21:22] + .024
+
+
+PolicyAndRecoil <- c(2)
+
+for(i in 2:25){
+  PolicyAndRecoil[i] <- PolicyAndRecoil[i-1]*exp(NewGrowthRate[i-1]/100)
+  PolicyAndRecoil[i] <- PolicyAndRecoil[i]+ 0.08*(CaseLoad[i]-PolicyAndRecoil[i])
+}
+
+EarlyRestriction <- PolicyAndRecoil
+
+NewGrowthRate <- GrowthRate
+NewGrowthRate[4] <- GrowthRate[4] - 6.82
+NewGrowthRate[5:9] <- GrowthRate[5:9] - 15.59
+NewGrowthRate[10:16] <- GrowthRate[10:16] - 8.5
+NewGrowthRate[17:18] <- GrowthRate[17:18] + .059
+NewGrowthRate[19:20] <- GrowthRate[19:20] + .024
+
+
+PolicyAndRecoil <- c(2)
+
+for(i in 2:25){
+  PolicyAndRecoil[i] <- PolicyAndRecoil[i-1]*exp(NewGrowthRate[i-1]/100)
+  PolicyAndRecoil[i] <- PolicyAndRecoil[i]+ 0.08*(CaseLoad[i]-PolicyAndRecoil[i])
+}
+
+
+LateRestriction <- PolicyAndRecoil
+#sum(PolicyAndRecoil)
+
+#sum(PolicyAndRecoil)/sum(CaseLoad)
+
+#PolicyAndRecoil[21]/15
+GovtPolicyVis <- as.data.frame(cbind(Weeks,CaseLoad, LateRestriction, MediumRestriction,EarlyRestriction))
+colnames(GovtPolicyVis)[2:5] <-c("No Policy", "Late Policy", "Standard Policy", "Early Policy")
+GovtPolicyVis <- tidyr::pivot_longer(GovtPolicyVis,cols = 2:5, names_to = "Type", values_to = "Cases")
+ggplot(data = GovtPolicyVis, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of Early Government Policy Intervention", y = "Rolling Weekly Average", x = "Weeks") + geom_vline(xintercept = 2, color = "Black") + geom_vline(xintercept = 9, color = "Dark Grey") + geom_vline(xintercept = 17, color = "Grey") + geom_label(aes(x = 4, label="Start of Intervention",y =30)) + geom_label(aes(x = 10, label="Reduction of Policy",y =20)) + geom_label(aes(x = 16, label="End of Policy",y =12))  + theme(legend.position="bottom")
+
+
+```
+
+Let's also look at what happens when we both decrease the policy levels in our equations to Moderate and Minor as well as increase them to Severe and Moderate.
+
+```{r, echo=FALSE}
+NewGrowthRate <- GrowthRate
+NewGrowthRate[3] <- GrowthRate[3] - 5.27
+NewGrowthRate[4:10] <- GrowthRate[4:10] - 10.88
+NewGrowthRate[11:17] <- GrowthRate[11:17] - 3.4
+NewGrowthRate[18:19] <- GrowthRate[18:19] + .03 # This line and the next are for how after a policy is lifted the lagged variable still remains in place.
+NewGrowthRate[20:21] <- GrowthRate[20:21] + .015
+
+LightPolicy <- c(2)
+
+
+for(i in 2:25){
+  LightPolicy[i] <- LightPolicy[i-1]*exp(NewGrowthRate[i-1]/100)
+  LightPolicy[i] <- LightPolicy[i]+ 0.08*(CaseLoad[i]-LightPolicy[i])
+}
+
+NewGrowthRate <- GrowthRate
+NewGrowthRate[3] <- GrowthRate[3] - 7.99
+NewGrowthRate[4:10] <- GrowthRate[4:10] - 18.33
+NewGrowthRate[11:17] <- GrowthRate[11:17] - 10.5
+NewGrowthRate[18:19] <- GrowthRate[18:19] + .3 # This line and the next are for how after a policy is lifted the lagged variable still remains in place.
+NewGrowthRate[20:21] <- GrowthRate[20:21] + .15
+
+HardPolicy <- c(2)
+
+
+for(i in 2:25){
+  HardPolicy[i] <- HardPolicy[i-1]*exp(NewGrowthRate[i-1]/100)
+  HardPolicy[i] <- HardPolicy[i]+ 0.08*(CaseLoad[i]-HardPolicy[i])
+}
+
+
+GovtPolicyVis2 <- as.data.frame(cbind(Weeks,CaseLoad, LightPolicy, MediumRestriction,HardPolicy))
+colnames(GovtPolicyVis2)[2:5] <-c("No Policy", "Light Policy", "Medium Policy", "Strong Policy")
+GovtPolicyVis2 <- tidyr::pivot_longer(GovtPolicyVis2,cols = 2:5, names_to = "Type", values_to = "Cases")
+ggplot(data = GovtPolicyVis2, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of Hypothetical Government Policy Intervention", y = "Rolling Weekly Average", x = "Weeks") + geom_vline(xintercept = 3, color = "Black") + geom_vline(xintercept = 10, color = "Dark Grey") + geom_vline(xintercept = 17, color = "Grey") + geom_label(aes(x = 4, label="Start of Intervention",y =30)) + geom_label(aes(x = 10, label="Reduction of Policy",y =20)) + geom_label(aes(x = 16, label="End of Policy",y =12)) + theme(legend.position="bottom")
+
+```
+
+
+
+
+```{r}
+1- sum(EarlyRestriction)/sum(CaseLoad)
+1- sum(LateRestriction)/sum(CaseLoad)
+1- sum(MediumRestriction)/sum(CaseLoad)
+1- sum(EarlyRestriction)/sum(LateRestriction)
+1- EarlyRestriction/LateRestriction
+1- EarlyRestriction[25]/LateRestriction[25]
+```
+
+In comparison to the 38.99% decrease in total cases that we had in the original version, the early version decreased total cases by 43.93% while the late version reduced total cases by 33.95%. This also means that the early version had 14.8% fewer cases than the late version. So while late is far better than never, being early is still really important. What is interesting though is how this gap between the early version and the late version changes over time. At week 4 there is a 22.8% difference between the two, but by the end that's gone down to just 9.16%. And that gap is only going to continue to narrow as time goes on thanks to the rubber band effect. It seems like this policy restrictions are good at slowing down the pandemic while they are in place, but they don't really have any kind of long lasting impact once they get lifted. Which leads in nicely to examining what the impact of vaccinations are.
+
+
+### Vaccination data
+
+While definitely vaccinations are definitely similar to government interventions in that both play a vital role in dealing with the pandemic, they play two very different roles. To illustrate what I mean, let's do a similar hypothetical situation to what we did with government policy but for vaccinations instead of policy. We're keeping the same time frame and case load, but now instead of looking at a changing policy response, we're going to be looking at rising vaccinations. For this we're going to assume that a county starts off with zero people vaccinated, and over the course of the 20 weeks steadily progresses to the medium vaccination level square with mild COVID-19 policy in my table for a state with a medium level of vaccinations, where vaccinations have a -12.1% impact on expected case growth. Like we did with government policy, we're gonna look at how this data changes when we just include the impact of the change in vaccination rates, as well as the impact of the change in vaccination rates plus that rubber band effect.\newline
+
+```{r, echo=FALSE}
+GrowthRate = c(0)
+for(i in 1:24){
+  GrowthRate[i] <- (log(CaseLoad[i+1]) - log(CaseLoad[i]))*100
+}
+
+NewGrowthRate <- GrowthRate
+VaccinationEffect <-c(0:23)/23*-0.1211555*100
+NewGrowthRate <- GrowthRate+VaccinationEffect
+VacPolicy <- c(2)
+VacAndRecoil <- c(2)
+
+for(i in 2:25){
+  VacPolicy[i] <- VacPolicy[i-1]*exp(NewGrowthRate[i-1]/100)
+  VacAndRecoil[i] <- VacAndRecoil[i-1]*exp(NewGrowthRate[i-1]/100)
+  VacAndRecoil[i] <- VacAndRecoil[i]+ 0.08*(CaseLoad[i]-VacAndRecoil[i])
+}
+#VacAndRecoil/CaseLoad
+#VaccinationEffect[3]
+#VacPolicy
+#VacAndRecoil
+#VacAndRecoil[21]/CaseLoad[21]
+VacPolicyVis <- as.data.frame(cbind(Weeks,CaseLoad, VacPolicy,VacAndRecoil))
+colnames(VacPolicyVis)[2:4] <-c("No Vaccinations", "Just Vaccinations", "Vaccinations and Rebound")
+VacPolicyVis <- tidyr::pivot_longer(VacPolicyVis,cols = 2:4, names_to = "Type", values_to = "Cases")
+ggplot(data = VacPolicyVis, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of rising Vaccination rates", y = "Rolling Weekly Average", x = "Weeks")  + theme(legend.position="bottom")
+StandardVac <- VacAndRecoil
+
+
+#VacAndRecoil
+#VacPolicy
+
+```
+
+```{r}
+sum(VacAndRecoil)/sum(CaseLoad)
+```
+
+
+  So overall vaccinations do a great job of eventually dealing with an ongoing pandemic and lessening the potential danger of future outbreaks by causing permanent change, however they do barely anything in the short term to actually stop the spread or minimize the peak of the cases. Now let's try a bunch of other scenarios. We are going to test out how what happens if vaccinations get started earlier versus what happens if they get started later, as well as what happens if a county manages to only get to the low vaccination level by the end of the time period compared to what will happen if the county actually manages to get to a relatively high amount of vaccinations (using the same definition of low and high from earlier).
+
+```{r, echo=FALSE}
+GrowthRate = c(0)
+for(i in 1:24){
+  GrowthRate[i] <- (log(CaseLoad[i+1]) - log(CaseLoad[i]))*100
+}
+
+NewGrowthRate <- GrowthRate
+LateVacEffect <- c(0,0,0,0:20/20)*-0.1211555*100
+EarlyVacEffect <-c(3:26)/23*-0.1211555*100
+SlowVacEffect <-c(0:23)/23*-0.0923*100
+FastVacEffect <-c(0:23)/23*-0.1520417*100
+LateVaccines <- c(2)
+EarlyVaccines <- c(2)
+SlowVaccines <- c(2)
+FastVaccines <- c(2)
+
+
+NewGrowthRate <- NewGrowthRate+LateVacEffect
+
+for(i in 2:25){
+  LateVaccines[i] <- LateVaccines[i-1]*exp(NewGrowthRate[i-1]/100)
+  LateVaccines[i] <- LateVaccines[i]+ 0.08*(CaseLoad[i]-LateVaccines[i])
+  
+}
+NewGrowthRate <- GrowthRate
+NewGrowthRate <- NewGrowthRate+EarlyVacEffect
+
+for(i in 2:25){
+  EarlyVaccines[i] <- EarlyVaccines[i-1]*exp(NewGrowthRate[i-1]/100)
+  EarlyVaccines[i] <- EarlyVaccines[i]+ 0.08*(CaseLoad[i]-EarlyVaccines[i])
+  
+}
+NewGrowthRate <- GrowthRate
+NewGrowthRate <- NewGrowthRate+SlowVacEffect
+for(i in 2:25){
+  SlowVaccines[i] <- SlowVaccines[i-1]*exp(NewGrowthRate[i-1]/100)
+  SlowVaccines[i] <- SlowVaccines[i]+ 0.08*(CaseLoad[i]-SlowVaccines[i])
+  
+}
+NewGrowthRate <- GrowthRate
+NewGrowthRate <- NewGrowthRate+FastVacEffect
+for(i in 2:25){
+  FastVaccines[i] <- FastVaccines[i-1]*exp(NewGrowthRate[i-1]/100)
+  FastVaccines[i] <- FastVaccines[i]+ 0.08*(CaseLoad[i]-FastVaccines[i])
+  
+}
+
+VacPolicyVisTime <- as.data.frame(cbind(Weeks,CaseLoad, EarlyVaccines,StandardVac, LateVaccines))
+colnames(VacPolicyVisTime)[2:5] <-c("No Vaccinations", "Earlier Vaccinations", "Normal Vaccinations", "Later Vaccinations")
+VacPolicyVisTime <- tidyr::pivot_longer(VacPolicyVisTime,cols = 2:5, names_to = "Type", values_to = "Cases")
+ggplot(data = VacPolicyVisTime, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of Vaccinating Sooner", y = "Rolling Weekly Average", x = "Weeks")  + theme(legend.position="bottom",legend.text = element_text(size=6))
+
+
+VacPolicyVisSpeed <- as.data.frame(cbind(Weeks,CaseLoad, SlowVaccines,StandardVac, FastVaccines))
+colnames(VacPolicyVisSpeed)[2:5] <-c("No Vaccinations", "Slower Vaccinations", "Normal Vaccinations", "Faster Vaccinations")
+VacPolicyVisSpeed <- tidyr::pivot_longer(VacPolicyVisSpeed,cols = 2:5, names_to = "Type", values_to = "Cases")
+
+```
+
+
+```{r,echo = FALSE}
+ggplot(data = VacPolicyVisSpeed, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Impact of Vaccinating Faster", y = "Rolling Weekly Average", x = "Weeks")  + theme(legend.position="bottom",legend.text = element_text(size=6))
+```
+
+
+
+So vaccinating earlier vs later does have an impact in the short term but not much impact in the long term if the vaccination levels that the values end up at aren't that much different, while vaccination quicker vs slower doesn't have much impact in the short run but in the long run the faster vaccinations do pick up more of an advantage.
+
+Despite the fact that government policies and vaccinations both accomplish the same general goal of reducing COVID-19 cases by a significant amount, they go about them in two different ways. Government policies are almost immediately and do a great job at reducing the worst of the pandemic to prevent things like hospitals being overrun, but eventually they get lifted and their impact while have little bearing on how things play out down the line. Conversely, it takes a while for the impact of rolling out vaccinations to have a real impact and a vaccination roll-out does little to help with an outbreak happening right now, but it doesn't fade off and instead only gets stronger over time. And this just makes sense if you think about it. With vaccinations, it's just simply the nature of vaccinations that it can't do much right away. Not only does it just take time to manufacture enough of the vaccine to get it to people and there are people who are hesitant about getting vaccinated or just aren't particularly motivated to do so, but the vaccine has to get actually developed, go through several rounds of testing, then slowly approved for different age groups. We're very lucky we got a vaccine ready as quickly as we did, and it still took us until December 2020. In comparison, a governor can pretty easily implement restrictions that will have significant results in less than a week. But on the flip side, vaccination's a lot better long term game plan for dealing with COVID-19. Whenever COVID-19 restrictions get lifted, and they eventually have to get lifted, they lose their affect on the model and so their impact fades away over the course of time thanks to the rubber band effect of the Case Growth variable. However, the number of people who are vaccinated can only increase, making it so that the impact of people being vaccinated only keeps rising and isn't ever going to be undone. While there might be something like a new variant that dramatically worsens our situation, that probably wouldn't really change the impact of vaccinations much since it's likely that any variant that causes problem would have been way more contagious and deadly in a situation where there was no vaccine available. 
+
+
+There's this trade-off to them that makes them fundamentally different from each so that you can't just say "Vaccinations are better at preventing the spread of COVID-19 than policy decisions" or "Government action is a more effective way of dealing with the pandemic than vaccinations". While getting everyone vaccinated is the best way to defeat the pandemic, that takes time and we need ways to deal with outbreaks until enough people are vaccinated that we can return to somewhat normal life.
+
+
+
+### Combined
+
+Now let's look at all three of these variables together. Same scenario as we've always had and we're actually going to include the trend lines from the previous sections (only the medium one for the government policy section), but now we're going to add in a new line that shows the combined impact of both of these variables.
+\newline
+```{r, echo=FALSE}
+
+NewGrowthRate <- GrowthRate
+NewGrowthRate[3] <- GrowthRate[3] - 6.82
+NewGrowthRate[4:10] <- GrowthRate[4:10] - 15.59
+NewGrowthRate[11:17] <- GrowthRate[11:17] - 8.5
+NewGrowthRate[18:19] <- GrowthRate[18:19] + .059 # This line and the next are for how after a policy is lifted the lagged variable still remains in place.
+NewGrowthRate[20:21] <- GrowthRate[20:21] + .024
+NewGrowthRate <- NewGrowthRate+VaccinationEffect
+
+
+VacAndPolicy <- c(2)
+
+for(i in 2:25){
+  VacAndPolicy[i] <- VacAndPolicy[i-1]*exp(NewGrowthRate[i-1]/100)
+  VacAndPolicy[i] <- VacAndPolicy[i]+ 0.08*(CaseLoad[i]-VacAndPolicy[i])
+}
+
+VacPolicyVis <- as.data.frame(cbind(Weeks,CaseLoad, MediumRestriction,VacAndRecoil,VacAndPolicy))
+colnames(VacPolicyVis)[2:5] <-c("No Vaccinations or Policies", "Policies", "Vaccinations", "Policies and Vaccinations")
+VacPolicyVis <- tidyr::pivot_longer(VacPolicyVis,cols = 2:5, names_to = "Type", values_to = "Cases")
+ggplot(data = VacPolicyVis, aes(x = Weeks, y = Cases))+ geom_line(aes(colour=Type)) + scale_x_continuous(breaks = Weeks) + scale_y_continuous(breaks = c(5,10,15,20,25,30,35)) + labs(title = "Combined Impact of Vaccinations and Policy", y = "Rolling Weekly Average", x = "Weeks") + geom_vline(xintercept = 3, color = "Black") + geom_vline(xintercept = 10, color = "Dark Grey") + geom_vline(xintercept = 17, color = "Grey") + geom_label(aes(x = 4, label="Start of Intervention",y =30)) + geom_label(aes(x = 10, label="Reduction of Policy",y =20)) + geom_label(aes(x = 16, label="End of Policy",y =12))  + theme(legend.position="bottom")
+
+```
+
+
+As you can see from this graph, government policies and vaccinations are great complements to each other. The combined version prevents that early peak from ever getting too high and it builds up enough momentum with vaccinations so that when the policy is lifted, cases remain low. Let's also look at some numbers from this data.
+
+
+```{r}
+1- sum(MediumRestriction)/sum(CaseLoad)
+1- sum(VacAndRecoil)/sum(CaseLoad)
+1- sum(VacAndPolicy)/sum(CaseLoad)
+1- MediumRestriction[25]/CaseLoad[25]
+1- VacAndRecoil[25]/CaseLoad[25]
+1- VacAndPolicy[25]/CaseLoad[25]
+```
+These values do a great job at highlighting what I previously discussed. First, government restrictions do the bulk of the heavy lifting when it comes to lowering the case load in the short term and flattening the curve. Second, vaccinations are the primary key to lowering cases in the long term and preventing them from creeping back up. And third, implementing both together gives us the best of both worlds and is always better than just one or the other.
+
+
+
+
+## Conclusion
+
+The main take away from this model is fairly simple. Government policy and vaccinations are both very important to fighting against COVID-19 but in two very different ways. The fact that government policy decisions aren't permanent, have a cost to keeping in place and have an impact that fades over time means that it's more of a stop gap rather than a permanent solution. It's main function is to prevent worst case scenarios and buy time for vaccines, which are the real solution to dealing with the pandemic. While the closure related policies we put in place do eventually get lifted, people aren't going to become unvaccinated. While they may need a booster shot eventually, even without it they'll still have a significant resistance to COVID-19. This relationship not only makes logical sense, but it's also something many experts have told us some variation of during the pandemic. Now the focus is on using government policies to mitigate the pandemic until we reach a certain vaccination threshold, with several states setting vaccination targets that and pledge to lift/relax the restrictions in place once that target was hit, but earlier in the pandemic a lot of the discussion was about using government response to buy time for us to build up resources that weren't quite as effective as vaccinations but were still effective once they managed to get actually put in place, such increasing our testing capacity. And I believe this is what we should focus on in the unfortunate scenario that we do go through another pandemic like this. Policies like school closures and stay at home orders are not cures for the pandemic. They are band-aid solutions meant as a way to quickly respond to a situation that has gotten out of hand and minimize damage until we can get more long term solutions online. The government shouldn't just spend a lockdown twiddling it's thumbs and waiting for things to get better, it needs to use that valuable time to ramp up other longer term solutions. This is especially the case when dealing with government policies that have real long term costs. I've generally treated government policies as one homogeneous unit while exploring this data, but that's really not the case. Some policies like requiring masks in particular public places like airports can basically be left in place indefinitely with no significant cost, but policies like limits on public gatherings and a light curfew can build serious resentment towards those implementing these restrictions if left in place for too long, and policies like school closures and workplace closures build resentment even quicker and can have major negative consequences for many people even if only in place for just a little while. There's also my testing data variable, which honestly might be closer to functioning like vaccinations than other government policies I looked at due to the fact that once a county or state has reached a certain testing capacity, it's rare that they dip below that threshold again. Like how vaccination levels never go down because people don't become unvaccinated. And I barely scratched the service on how these government policies change as more people get vaccinated, I really only explored the effect of vaccinations on government policy as a whole. It feels like there is a bottomless rabbit hole of compelling follow-up questions to this model, but I think it's time to return to main point of the results I have rather than speculating endlessly about tangents. 
+
+  In summary, vaccinations and government interventions are the excellent weapons we have against fighting the COVID-19 pandemic and have opposing strengths and weaknesses that make them truly shine when used in conjunction with each other. A competent pandemic response plan needs to pay attention to both of these tools and use them appropriately in order to complement each other. This is important not only so we can prepare for future pandemics, but also to judge those that were in power during this pandemic. Many mistakes were made over this pandemic, and it's important to recognize who was doing and saying things that is backed up by the data I have here, and who made errors in judgement that cost people their lives.
+  
+  But let's end this on a such a dour note. For whatever it's worth, I am genuinely hopeful that lessons have been learned from this pandemic will stick for a long time. Going into this pandemic it feels like we had been lulled into a false sense of security regarding the possibility of a pandemic on this scale. Diseases like the 2009 H1N1 virus or the Ebola outbreak came and went, and while they were certainly tragic, they didn't bring the entire globe to a halt the way COVID-19 did. We stopped worrying about the possibility of something like this happening and let many things slip that we really shouldn't have. But after these past two years, no one is going to want to go through a repeat of this again and I expect that should something like this happen in again, we will be far more ready.
+  
+  

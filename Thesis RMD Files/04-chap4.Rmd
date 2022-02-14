@@ -1,0 +1,282 @@
+# Results
+
+```{r,echo = FALSE}
+knitr::opts_chunk$set(fig.width=5.5, fig.height=4.5) 
+```
+## Model
+
+  Here are the results from my rough model of Exponential Case Growth between the rolling case per capita average 7 days from now and the rolling case per capita average 14 days from now. Exponential Case Growth is recorded as a percentage rather than a decimal, which effectively shifts the decimal place over by two. The “As percent” column represents how much of that variable increasing by 1 will have an impact on the overall number of cases between 7 and 14 days from now. So if the “As Percent” column contains a 0.992 for a particular variable, then increment a variable by 1 will decrease the number of COVID-19 cases that happen between 7 days from now and 14 days from now by 0.8%. For creating this model, I took 70% of my data for my training data set that I build my model off of and kept 30% of my data for later as a testing data set to calculate how effective my model is on data that isn't factored in to it.
+\newline
+
+\footnotesize
+
+
+
+```{r load_Results,echo = FALSE}
+# FinalResults.csv is in the data directory $$\\[1in]$$
+resultsPath <- here::here("data", "FinalResults2.csv")
+FinalResults <- read.csv(resultsPath, stringsAsFactors = FALSE)
+colnames(FinalResults)[3] <- "As % change"
+knitr::kable(FinalResults[1:10,])
+
+```
+
+\newpage
+
+
+```{r,echo = FALSE}
+knitr::kable(FinalResults[11:49,])
+```
+
+\newpage
+
+```{r,echo = FALSE}
+knitr::kable(FinalResults[50:79,])
+```
+
+
+\normalsize
+
+\newpage
+Model Stats:
+
+Lambda = 81.13908
+
+RMSE = 3896.1
+
+NRMSE = 3.0622
+
+R^2 = 0.10632
+
+IQR predictions: 19.14
+
+IQR actual: 64.79
+
+I picked this value of lambda mostly through trial and error and just intuition about how much I wanted to penalize large coefficients. The RMSE, NRMSE, R^2, IQR prediction and IQR actual are all calculated off of my testing data.
+
+
+## Intrepreting Impact
+
+### Moderate and Extreme Change
+
+  Now it can be hard to interpret exactly what these coefficients mean because of the different scaling on all of them. We have variables that go from 0 to 1, while other variables go from 0 to 100,000. To provide some context for what these numbers mean, I’ve created the following table based off of percentile measurements of my data. The “Moderate Change” column represents the difference between the 25th percentile and the 75th percentile, also known as the IQR. The “Extreme Change” column represents the difference between the 2.5th percentile and the 97.5th percentile. The “Moderate Change Impact” and “Extreme Change Impact” columns represents the change the difference these respective changes in a variable will have on my model’s prediction. To fit this data on to the page without making it either super small or going off the page, I've split it up a fair amount.
+
+
+
+```{r, echo=FALSE}
+# ModelImpact.csv is in the data directory
+ImpactPath <- here::here("data", "Model_Impact2.csv")
+
+ModelImpact <- read.csv(ImpactPath, stringsAsFactors = FALSE)
+
+ModelImpact[,2] <- as.character(ModelImpact[,2])
+ModelImpact[,3] <- as.character(ModelImpact[,3])
+ModelImpact[,4] <- as.character(ModelImpact[,4])
+ModelImpact[,5] <- as.character(ModelImpact[,5])
+colnames(ModelImpact)[2:5] <-c("Moderate Change", "Extreme Change","Moderate Impact", "Extreme Impact")
+```
+
+
+\scriptsize
+```{r, echo=FALSE}
+knitr::kable(ModelImpact[1:39,1:3], row.names =  FALSE)
+
+
+```
+
+
+\newpage
+
+```{r, echo=FALSE}
+knitr::kable(ModelImpact[40:78,1:3], row.names =  FALSE)
+
+
+```
+
+
+\newpage
+
+
+```{r, echo=FALSE}
+knitr::kable(ModelImpact[1:39,c(1,4:5)], row.names =  FALSE)
+
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE}
+knitr::kable(ModelImpact[40:78,c(1,4:5)], row.names =  FALSE)
+
+
+```
+
+\normalsize
+\newpage
+
+  Now the values here for data involving vaccinations and the delta variant are slightly misleading, because it includes a lot of data from before the first vaccination and before the first recorded Delta case in the United States. So to give those particular results even more context, I’ve created a new table that does the same thing but looks at just the vaccination data from after the FDA approved the first COVID-19 vaccine (December 11th) and delta data from after the first case of the delta variant of COVID-19 was detected in the United States (May 20th, 2021).
+\newline
+
+\scriptsize
+
+```{r,echo = FALSE}
+SpecialPath <- here::here("data", "SpecialImpacts2.csv")
+
+SpecialImpact <- read.csv(SpecialPath, stringsAsFactors = FALSE)
+
+blah <- ModelImpact
+
+
+SpecialImpact[,2] <- as.character(SpecialImpact[,2])
+SpecialImpact[,3] <- as.character(SpecialImpact[,3])
+SpecialImpact[,4] <- as.character(SpecialImpact[,4])
+SpecialImpact[,5] <- as.character(SpecialImpact[,5])
+
+colnames(SpecialImpact)[2:5] <-c("Moderate Change", "Extreme Change","Moderate Impact", "Extreme Impact")
+```
+```{r}
+knitr::kable(SpecialImpact[1:14,1:3], digits = 4)
+```
+
+
+\newline
+
+```{r}
+knitr::kable(SpecialImpact[1:14,c(1,4,5)], digits = 4)
+```
+
+\normalsize
+
+
+### Aggregated impacts
+
+  Another issue with interpreting the above data is that specific variables are designed to go together, but since their impact is split up it can be hard to tell exactly what their impact is. I’ve done some calculations to show what the aggregate impact of COVID-19 policies and vaccinations are. Let’s start with the vaccination data. This data is broken into 5 categories: minor, mild, moderate, aggressive, severe. These represent the 2.5th, 25th, 50th, 75th, and 97.5th percentiles of various COVID-19 policies respectively. The vaccination percentage change just represents the changing of the C_Sum_Vac and H_Sum_Vac, not vaccination rates as a whole.
+
+\scriptsize
+```{r,echo = FALSE}
+PolicyPath <- here::here("data", "PolicyImpact2.csv")
+
+PolicyImpact <- read.csv(PolicyPath, stringsAsFactors = FALSE)
+
+colnames(PolicyImpact)[2:5] <- c("0% Vaccinatinated", "11% Vaccinatinated", "25% Vaccinatinated.25", "39% Vaccinatinated")
+blah <- PolicyImpact
+Minor <- PolicyImpact[1:4,]
+Mild <- PolicyImpact[5:8,]
+colnames(Mild)[1] <- "Mild"
+Moderate <- PolicyImpact[9:12,]
+colnames(Moderate)[1] <- "Moderate"
+Aggresive <- PolicyImpact[13:16,]
+colnames(Aggresive)[1] <- "Aggresive"
+Severe <- PolicyImpact[17:20,]
+colnames(Severe)[1] <- "Severe"
+
+```
+
+
+
+```{r}
+knitr::kable(Minor)
+```
+
+
+```{r}
+knitr::kable(Mild, row.names = FALSE)
+```
+
+
+```{r}
+
+knitr::kable(Moderate, row.names = FALSE)
+```
+
+
+
+```{r}
+
+knitr::kable(Aggresive, row.names = FALSE)
+
+```
+\newline
+
+```{r}
+knitr::kable(Severe, row.names = FALSE)
+```
+
+\newline
+\normalsize
+
+  And lastly, my Vaccination data. For the sake of simplicity, the following calculations will be on a county where the percentage of people between the ages of 18 and 64 is 60% and the percentage of people 65 or above is 20% (pretty close to what their medians are, 0.586 and 0.195 respectively). Additionally, the population of the state is 5 million people and the county’s population is 100,000. I’ve also create three levels of vaccination. “Low”, where 25% of the seniors are vaccinated and 10% of non-senior adults are vaccinated (11% of total population), “Medium”, where 50% of the seniors are vaccinated and 25% of non-senior adults are vaccinated (25% of total population), and “High”, where 75% of the seniors are vaccinated and 40% of non-senior adults are vaccinated (39% of total population). Then I also have columns for when there are no COVID-19 policies implemented, mild COVID-19 policies implemented (25th percentile that was previously described) and aggressive COVID-19 policies implemented (75th percentile described before).
+
+
+\scriptsize
+```{r, echo = FALSE}
+
+VaccinePath <- here::here("data", "VaccinationImpact2.csv")
+
+VaccineImpact <- read.csv(VaccinePath, stringsAsFactors = FALSE)
+
+VaccineImpact <- VaccineImpact[1:12,1:4]
+
+blah <- PolicyImpact
+LowStateVaccinations <- VaccineImpact[1:3,]
+colnames(LowStateVaccinations)[1] <- "Low State Vaccinations"
+MediumStateVaccinations <- VaccineImpact[4:6,]
+colnames(MediumStateVaccinations)[1] <- "Medium State Vaccinations"
+HighStateVaccinations <- VaccineImpact[7:9,]
+colnames(HighStateVaccinations)[1] <- "High State Vaccinations"
+StateVaccineImpact <- VaccineImpact[10:12,]
+
+colnames(StateVaccineImpact) <- c("County vs State", "Low State Vac", "Medium State Vac", "High State Vac")
+
+```
+
+
+```{r}
+knitr::kable(LowStateVaccinations, row.names = FALSE)
+
+```
+
+
+```{r}
+
+knitr::kable(MediumStateVaccinations, row.names = FALSE)
+
+```
+
+
+
+```{r}
+
+knitr::kable(HighStateVaccinations, row.names = FALSE)
+
+```
+
+
+
+```{r}
+
+knitr::kable(StateVaccineImpact, row.names = FALSE)
+
+```
+\normalsize
+
+\newpage
+
+## Validations
+
+
+  For this model I did several different kinds of validations to verify that my model wasn't significantly biased in some way. First I tried plotting some residuals. This is a technique where you look at the value of a variable and see how it lines up with the residuals from the model. If there is a noticeable pattern, that indicates there is something off about that variable's impact on the model that needs to be accounted for. When I did this with my data, the results were a bit lackluster. For the sake of brevity I've included only two of the residual plots that I looked at. One is of county vaccinations per capita among all age groups and the other is of the current growth rate.
+
+
+```{r}
+
+knitr::include_graphics("VaccinationsResiduals.png", dpi = 125)
+knitr::include_graphics("CurrentGrowthRate.png", dpi = 125)
+
+```
+
+  While there does seem to be a significant pattern with the vaccination data, with how it narrows down as vaccinations increase and then flares out at full vaccinations, I think that's mostly just a product of the values being normally distributed and the more common vaccination levels being more likely to have more significant outliers. And for the the growth rate data, there is a bit of a parabolic bend to the residuals if you squint, but considering I've already added squared and cubed versions of the current growth rate and at my limit for how much data I could include in my model, trying to adjust get rid of this small discrepancy with even more powers seems like a task better left for future exploration.
+
+
+  I also ran a k-fold cross validation on my model. The way this works is that I break my model into 5 different chunks, then create five different models using each chunk as the testing data to see what kind of results I get, then averaging those coefficients together and seeing how they compare to my. While there were some significant differences in the coefficients in certain places, those differences became basically unnoticeable when converted to percentages and basically compared to the range of the variables in play. Even in our extreme cases, the impact of a variable in our regular model going from it's 2.5th percentile to 97.5th percentile was within 1% of that variable's effect in the k-fold model for that same situation, with a majority being even below 0.1%. The only two variables that changed the extreme impact by more than 0.5% was CaseGrowthRate at a 0.850% decrease and CaseGrowthRateState at a 0.954% increase. So between this and that residual plot it does seem as though there is something slightly off about the way case growth in my model works, it doesn't seem like a significant enough issue to throw my model off by much and change the big picture view from the model. Speaking of which, let's get into analyzing this model and examining what exactly this big picture view is.

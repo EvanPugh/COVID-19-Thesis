@@ -1,0 +1,188 @@
+# Data
+
+<!-- Required to number equations in HTML files -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+## Overview
+
+   To investigate what factors have impacted the spread of the COVID-19 pandemic, I have created one large data frame using data I pulled from a wide variety of sources. The main combined dataset I’m using is a consists of daily county level from 2819 of the counties 3006 counties in the United States. The data for a county begins once it is after March 8th, 2020 and there have been COVID-19 cases in the county for at least a week. Daily observations for the county continue until the Delta variant reaches 0.40 percent of the total new cases of COVID-19 in the region at which point the data for that county stops, for reasons that I will go into later. In total, the dataset I used to build my model consists of 1027654 observations of 81 different variables. Here is a breakdown of where I got that data from and what it means. 
+
+
+## General
+
+   
+   Before I get into discussing specific data sources, I would like to do some general discussion about where I’m getting my data from. A lot of my data comes from the similar sources and/or is focused on the same topics. So to avoid unnecessarily repeating myself, I’d like to start off by discussing some topics that are applicable to multiple of the variables that I’ve collected data on and then later referencing.
+
+   So to start off with, most of my data comes directly from the government itself, generally either the CDC or the Census Bureau. The data I get from these sources is mostly variables like population, demographics, reporting on COVID, etc. The CDC and Census Bureau are well regarded as accurate data sources so for the most part I have no reason to believe has any significant errors. However there are two different kinds of issues with the data on COVID-19 in particular that I've noticed. The first is simply the that data is more likely to be accidentally entered wrong. Compared to the types of data I previously discussed, the data I’m using that centers on COVID-19 statistics is the kind of data that often gets entered every day and even county level data is complied from multiple different sources, so it is a lot easier for some of my data to be off because someone entered a number wrong. Additionally, if someone incorrectly enters data for something that’s fairly static (at least for the time frame I’m using) and can be measured again, then there’s a good chance that the typo will get fixed. That’s not the case with daily reporting on COVID-19 cases. If 127 cases of COVID-19 are reported that day, that’s how many cases of COVID-19 are reported that day regardless of if they later find out that it should have been 137 cases of COVID. The second potential issue that data just isn’t reported. So you have people taking at home COVID-19 tests that aren’t counted in my data on testing, you have people who just catch COVID-19 and never feel sick enough to go to the hospital or get tested, etc. Again, this is just really something that there isn’t a way around and overall the picture I get from this data is still mostly accurate. So while it is a source of concern that is worth acknowledging, it's mostly unavoidable and shouldn't cause too much trouble.
+   
+   Another data source that I’m going to be frequently referring to is Johns Hopkins. Johns Hopkins is widely regarded as a quality institution and is one of the all time most cited intuitions  in research papers. Additionally, a lot of the data I’m using from them is data that has been scrapped and aggregated from various government sources, like the CDC. I don’t think there is much chance that either of these parties made significant errors, so I’m content with trusting this data. 
+
+   Now let's get into specifics. With each data source I have I plan to discuss two things. First, I’ll focus on how reliable is this data and whoever gathered it. Second, I’ll discuss in what ways it is relevant to my topic and in what ways it may not be a perfect measure of what I’m looking for.
+
+## Data Sources
+
+### COVID-19 cases and deaths data
+
+   The primary dependent variables I’m going to be making models to calculate for are the number of COVID-19 cases by county and the number of COVID-19 deaths by county. My source for this data is Johns Hopkins university, which has aggregated a ton of county level data on COVID-19 that is reported by the government into one file. Johns Hopkins and the governments collection of COVID-19 data are both sources I trust a lot and don't think I could find better alternatives for.
+
+   There are instances where data is incorrect, either because something was/wasn’t attributed to COVID-19 by mistake or by human error in entering data. I have done my best to correct this in obvious instances where it resulted in a negative number of new cases or deaths (I'll discuss that more in my Methods Section), however that doesn’t perfectly replicate what the true data is and it doesn’t catch instances where there were errors but just not any large enough to cause a negative amount of new case or deaths. Regardless, I feel that it is close enough to the true values here that it is not a major concern for my model.
+
+### Vaccination data
+
+   Data on vaccinations is probably one of the more important pieces of data to have in this model. The variables I took from this data set are the county and state level data for percentage and number of all people who are vaccinated, percentage and number of people over 18 who are vaccinated, and percentage and number of people over 65 who are vaccinated.
+   
+   This data comes from the CDC so overall I’m very confident in the accuracy of the data that is being reported, especially since there aren’t really unreportable cases like there are with mild COVID-19 cases that are never detected or self administered COVID-19 tests that are used but the results of which are never reported. However, there is one pretty big issues. County level vaccination rate data is not reported for Hawaii, Texas nor California counties with less than 20,000 people. I could simply use the statewide data for each county, however vaccination data varies far to much on a county by county basis within a state for that to really work. Instead I have gone with the simple option of eliminating those counties from my data. This is not ideal, especially in the case of Texas. Texas makes up a lot of my data and was particularly interesting considering the massive spike they had late this summer and particular policy decisions that have been made there. However, it was ultimately necessary and the only alternative I could think of was managing to find a way of generating estimates of the vaccination data for my missing counties, which would be far too time consuming and might not even wind up giving me anything usable. 
+
+### Government policy data
+
+   Now let’s get into the government policy variables. This data set is from the University of Oxford and consists of categorical data where each observation is a day in a given nation or state and the variables represent a broad array of different types of policy steps a state or local government can take to combat the pandemic. Each variable is ranked on a scale from 0 to 4, with 0 being that there is no policy in place and larger numbers representing more significant policies. Some policies might not go all the way to 4 and instead cap at either 3 or 2. As an example, let's look at the school closure variable. A 0 in this column means that there has been no change implemented. A 1 means that schools have modified the way that they operate to deal with the pandemic (i.e. having a mask mandate, allowing for students to attend online if they wish, etc) but classes are still happening in the school buildings. A 2 means that school is canceled for some but not for others (i.e. just badly effected schools are closed, just high schools are closed). A 3 means that closing is required on all levels for schools in the state, although online classes may still be happening. More details on which variables mean what and how to interpret the values for them are available on the GitHub for this project. @CovidTracker 
+   
+  Now this data set isn't perfect. The intricacies of broad policy decisions cannot be sorted into just a few categories and there is some missing data, especially since for my model I'm going to be converting it into numeric data. However, it is still absolutely incredible that this amount of data has been gathered considering that this values have to be changed manually by someone looking at headlines and seeing what kinds of policy decisions have been made. I'm lucky to have a dataset this good, I could never have created something anywhere near this massive on my own.
+
+  Even so, there are a fair amount of variables from this data set that I chose not to use. This was mainly due to some combination of not having enough variation in them over the course of the pandemic or the categories being too broad to capture the kind of detail I'd like. These were mostly just unfortunate issues I ran into because of the specifics about what I'm doing rather than the data set in general, such as a lack of other countries in the mix, my particular time frame meaning some data is just kinda pointless, or just stuff that has a murky relationship with what I'm trying to measure.
+  
+  
+### Test positive rate
+
+   The source I am using to track statewide data on COVID-19 tests is a compilation of data from state governments. This data was initially complied by the COVID-19 Tracking Project, however it was taken over by the Johns Hopkins Coronavirus Resource Center as of March 7th, 2021. This two groups have very solid track records and I am confident that they can compile data accurately, so the only potential source of error would be from the data sources themselves. From this dataset I will mainly just be uses the variables representing the total number of tests and the total number of positives. I’m including this data in addition to just the raw number of COVID-19 cases this for two reasons. First, the number of COVID-19 tests performed provides good information on how a state is ramping up capability for COVID-19 and how seriously people in that state are treating the COVID-19 pandemic. Second, the percentage of tests that are positive tells us a lot about the nature of the pandemic and our ability to deal with it. If that percentage is high, that means there are likely a lot more COVID-19 cases that are going unrecorded and more people should be getting tested. 
+
+   It is worth noting that this data does not include all tests performed, since there are a large amount of at home COVID-19 tests performed and negative tests aren’t reported and positive tests are merely encouraged to be reported. However, I feel that this is an unavoidable problem and despite this the testing data I have is still something I believe will prove extremely useful. Another concern I have is that my data on COVID-19 tests is statewide data rather than county wide data like the rest of my COVID-19 data. But I think this is one of the variables where not having county level data is too big of a deal and it's not a problem I have a good solution for.
+
+### COVID-19 Variants
+
+   My data on COVID-19 variants comes from the CDC itself and is important mainly because of the Delta variant. While other variants have been somewhat influential at one point, the Delta variant has been utterly dominant since it first appeared and brought the pandemic roaring back almost single handedly. As previously discussed, the CDC is extremely reputable and I doubt that there is any significant error in this data. However, that doesn't mean there aren't issues with it. This CDC tracker tracks the percent of COVID-19 cases that belong to different COVID-19 variants across 10 regions of the US. This is an issue because the larger a region the data covers the less likely it is for my data to be equally representative of all the area covered in it. The difference in prevalence of the delta variant between two neighboring regions can get to be as big as 50% (although not in my data frame since I cut off my data once Delta hits 40%), meaning that two neighboring counties could be reported as having widely different values when they are actually probably fairly similar. This data is also only reported a few times a month, meaning that the data between reports has to be interpolated. However this is really the only source I have and doing anything truly complex here would have been a ton of effort for not much reward.
+   
+   
+### Hospitalization data
+
+   Another source of data that I’ve collected is data from hospitals and how they are weathering the pandemic. This is data that is reported to the government by hospitals, so I think it is pretty high quality. There are a ton of variables in here and I’m not going use all of them, but the mains ones that I have included in my data set are the ones related to how many hospitals are reporting that they have a staffing shortage and the ones related to what percentage of hospital beds are being taken up by people with COVID-19.
+   
+   One problem with this data set is that it relies on hospital reporting this data themselves. So at the start of the pandemic when things weren’t as bad you had fewer hospital reporting, there might be some hospitals that only occasionally reported or just occasionally reported, etc. However, it does tell me how many hospitals are choosing to report this data on this particular date and in general the hospitals that aren’t reporting this data to the government are the ones not dealing with much COVID-19, so it still works as a good gauge. This is supported by the fact that the number of hospitals reporting in a state tends to only increase over time, meaning we generally aren't losing hospitals that were once reporting data. Another potential issue is that this data is by state and not by county. However I feel like there are factors that make it so it’s not as important to have county level data for this variable as it is for other variables, such as the fact that it’s probably fairly common for people to go to a hospital that isn’t in their county.  
+
+### Google Mobility data
+
+   The final major source of data I have included is Google’s COVID-19 mobility data. The variables included in this data are based off of anonymized user location data from Google. It creates different categories for what type of place a location is, then tracks how much time people spend in those locations. Then it measures the percent change in how much time people in a county/state are spending in locations corresponding to each category, with the baseline being based off of data from January 3rd through February 6th, 2020. I’ve used county level data when available, but if it wasn’t available for a county I used the state level data instead. This might pose some problems since I think there is probably a fair amount of correlation between the counties that Google doesn’t bother or have enough data to track, but it’s still the closest representation I have. 
+
+### Miscellaneous Data
+
+   This section is just for the sort of miscellaneous data from the Census Bureau that I have in my model that isn't really particularly related to COVID and more just for background on the counties to help the other variables work better. As previously said, Census Bureau data is very reliable so I don't have any concerns about significant errors in this data. In this category I have data on ages, population on a state and county level, what the average unemployment rate of a county was in 2020, median household income, and average household size. I initially had a lot more variables in this category, however I had to whittle down the scale of my model for practical reasons. These variables are the ones that survived.
+
+## Variable names and meanings
+
+   Now that we’ve covered all the data sources, let’s go into the data variables that I’m actually using in my model. Below I’ve included a brief description of all the variables I’ve included in my model except for the government response variables, since those are all interlocked in complicated ways that I'll have to explain. Some of these may seem odd, and I'll explain them later in my methods section.
+
+* Population: The population of the county (measured in thousands)
+
+* State Pop: The population of the state the county resides in (measured in thousands)
+
+* TotalCasesPerCapita: The total number of confirmed cases in that county per 100,000 people
+
+* TotalDeathsPerCapita: The total number of confirmed deaths in that county per 100,000 people
+
+* RollCasesCapita: The average number of cases per 100,000 people in the county over the past week
+
+* RollDeathsCapita: The average number of deaths per 100,000 people in the county over the past week
+
+* RollStateDeathsCapita: The average number of deaths per 100,000 people in the state over the past week
+
+* CaseGrowthRate: The exponential growth rate of cases in the county between 7 days from now and 14 days from now. Multiplied by 100
+
+* CaseGrowthRate2: The square of the CaseGrowthRate variable, divided by 100
+
+* CaseGrowthRate3: The cube of the CaseGrowthRate variable, divided by 100,000
+
+* VaccinatedAllPerCapita: Number of people in a county who are vaccinated per 100,000 people in the county
+
+* Vaccinated18To64PerCapita: Number of people in a county between the age 18 and 64 who are vaccinated per 100,000 people in the county
+
+* VaccinatedOver65PerCapita: Number of people in a county 65 year old or older who are vaccinated per 100,000 people in the county
+
+* UnvaccinatedAllPerCapita: Number of people in a county who are unvaccinated per 100,000 people in the county
+
+* Unvaccinated18To64PerCapita: Number of people in a county between the age 18 and 64 who are unvaccinated per 100,000 people in the county
+
+* UnvaccinatedOver65PerCapita: Number of people in a county 65 year old or older who are unvaccinated per 100,000 people in the county
+
+* WeeklyTestsPerCapita: Number of COVID-19 tests per 100,000 people performed over the past week in a state
+
+* TestPositiveRate: The number of confirmed COVID-19 cases in the state during the past 7 days over the number of COVID-19 tests performed in the state that week
+
+* LagWeeklyTestsPerCapita: The WeeklyTestsPerCapita variable from two weeks ago
+
+* LagPositiveRate: The TestPositiveRate variable from two weeks ago
+
+* Delta: The percentage of cases attributed to the Delta variant of COVID in that region of the US
+
+* VaccinationRateRestOfState: The vaccination rate for the state outside of this county
+
+* VaccinatedDiff: The Vaccination rate of a county minus the VaccinationRateRestOfState variable
+
+* HospitalStaffingShortage: Percentage of hospitals that are reporting a staffing shortage
+
+* HospitalBedsCovidPercent: Percentage of hospital beds that are taken up by COVID-19 patients
+
+* retail_and_recreation_percent_change_from_baseline: Percent change from baseline of activity/movement in retail and recreation areas (restaurants, shopping centers, museums). County level when available, otherwise state level
+
+* grocery_and_pharmacy_percent_change_from_baseline: Percent change from baseline of activity/movement in places like grocery stores, pharmacies, and farmers markets. County level when available, otherwise state level
+
+* parks_percent_change_from_baseline: Percent change from baseline of activity/movement in places like local and national parks, public beaches and plazas. County level when available, otherwise state level
+
+* transit_stations_percent_change_from_baseline: Percent change from baseline of activity/movement in transport hubs like subway, bus and train stations. County level when available, otherwise state level
+
+* workplaces_percent_change_from_baseline: Percent change from baseline of activity/movement in workplaces. County level when available, otherwise state level
+
+* residential_percent_change_from_baseline: Percent change from baseline of activity/movement in residential areas. County level when available, otherwise state level
+
+* Over65Percent: Percentage of a county that is over 65 years old
+
+* Age18To64Percent: Percentage of a county that is 18 to 64 years old
+
+* Metro_2013: A dummy variable representing whether a county is part of a metropolitan area as of 2013
+
+* Unemployment_rate_2020: The average unemployment rate of a county in 2020
+
+* CaseGrowthPastTwoWeeks: Exponential growth rate of cases over the past two weeks, multiplied by 100 (set to 1000 if Infinite because it started at 0)
+
+* CaseGrowthPastThreeWeeks: Exponential growth rate of cases over the past three weeks, multiplied by 100 (set to 1000 if Infinite because it started at 0)
+
+* CaseGrowthPastFourWeeks: Exponential growth rate of cases over the past two weeks, multiplied by 100 (set to 1000 if Infinite because it started at 0)
+
+
+## Government Response Variables
+
+Since a lot of my government response variables are built off of each other, I thought it'd be easier to explain them while they are isolated and on their own. So starting off, our base variables are:
+
+* C1_School.closing: Records school and university closings
+
+* C2_Workplace.closing: Records closings of workplaces
+
+* C3_Cancel.public.events: Records cancellations of public events
+
+* C4_Restrictions.on.gatherings: Records limits on public gatherings
+
+* C5_Close.public.transport: Records closing of public transport
+
+* C6_Stay.at.home.requirements: Records orders to "shelter-in-place" and otherwise confine to the home
+
+* C7_Restrictions.on.internal.movement: Records restrictions on internal movement between cities/regions
+
+* E1_Income.support: Records if the government is providing direct cash payments to people who lose their jobs or cannot work
+
+* E2_Debt.contract.relief: Records if the government is freezing financial obligations for households
+
+* H2_Testing.policy: Records government policy on who has access to testing
+
+* H6_Facial.Coverings: Records policies on the use of facial coverings outside the home
+
+* H8_Protection.of.elderly.people: Records policies for protecting elderly people (as defined locally) in Long Term Care Facilities and/or the community and home setting
+
+  In addition to these variables, I also have lags of all of them as well. The lags that I have are simply the the same variable but with '.lag' attached and the end and the value that variable has is what the value of that variable was for the county three days ago.
+
+  I also have the Sum variables. There is my C_Sum variable, which is the sum of all of Closure related variables (the ones that start with a C) and my H_Sum variable, which is the sum of all of my Healthcare related variables (the ones that start with an H). For both of these variables, I have lagged versions of them by 3 days, 2 weeks and 4 weeks (the same variable names but with '_Three.Days' , '_Two.Weeks' and '_Four.Weeks' attached to the end of them), as well as interaction terms with the percentage of people in that county who are vaccinated (appended with '_Vac').
+
+
+  So now that we've covered all of the data sources and variables in my data set, let's discuss how I went about creating some of these variables based off of the data from my data sources.

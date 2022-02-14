@@ -1,0 +1,172 @@
+```{r include_packages_2, include = FALSE}
+# This chunk ensures that the thesisdown package is
+# installed and loaded. This thesisdown package includes
+# the template files for the thesis and also two functions
+# used for labeling and referencing
+if (!require(remotes)) {
+  if (params$`Install needed packages for {thesisdown}`) {
+    install.packages("remotes", repos = "https://cran.rstudio.com")
+  } else {
+    stop(
+      paste(
+        'You need to run install.packages("remotes")',
+        "first in the Console."
+      )
+    )
+  }
+}
+if (!require(dplyr)) {
+  if (params$`Install needed packages for {thesisdown}`) {
+    install.packages("dplyr", repos = "https://cran.rstudio.com")
+  } else {
+    stop(
+      paste(
+        'You need to run install.packages("dplyr")',
+        "first in the Console."
+      )
+    )
+  }
+}
+if (!require(ggplot2)) {
+  if (params$`Install needed packages for {thesisdown}`) {
+    install.packages("ggplot2", repos = "https://cran.rstudio.com")
+  } else {
+    stop(
+      paste(
+        'You need to run install.packages("ggplot2")',
+        "first in the Console."
+      )
+    )
+  }
+}
+if (!require(bookdown)) {
+  if (params$`Install needed packages for {thesisdown}`) {
+    install.packages("bookdown", repos = "https://cran.rstudio.com")
+  } else {
+    stop(
+      paste(
+        'You need to run install.packages("bookdown")',
+        "first in the Console."
+      )
+    )
+  }
+}
+if (!require(thesisdown)) {
+  if (params$`Install needed packages for {thesisdown}`) {
+    remotes::install_github("ismayc/thesisdown")
+  } else {
+    stop(
+      paste(
+        "You need to run",
+        'remotes::install_github("ismayc/thesisdown")',
+        "first in the Console."
+      )
+    )
+  }
+}
+library(thesisdown)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+flights <- read.csv("data/flights.csv", stringsAsFactors = FALSE)
+```
+
+# Methods
+
+   In data analysis, it is not enough to simply collect data. You have to mold it into the form you want, polish any rough spots, and create models and visualizations that turn an incomprehensible pile of data into something much simpler that can be easily interpreted. In this section, I’ll be going over the methods by which I’ve used the data I gathered to craft new variables, as well as the steps I took to fix errors in my data and how I determined which observations I was going to use. Let’s start off by talking about all the different variables I had to create from the data I had gathered.
+
+## Variable modifications
+
+### Cases and Deaths
+
+   I’ll start off with my data on cases and deaths, since that is the data I used to create the most new variables. I did the exact same things for both cases and deaths so I’ll just take about this in terms of cases but everything I’m saying also applies to deaths. 
+	
+   I started with just variables representing the total confirmed cases in a county. I then created a variable representing the average of COVID-19 cases over the past week, generally referred to as the “Rolling seven day average”. I did this by simply subtracting what the case count in that county was 7 days ago from the current case count in the county and then dividing that by 7. It’s important to prevent what I’m going to call “bleed over”, which is when you have are looking at data from the beginning of your time frame and by pulling data from seven days ago you are actually pulling data from the end of your time frame in the previous county. I’ll talk more about how I dealt with that issue in my section on lead and lag variables since it’s also applicable there.  Next, I created a “per capita” version of my rolling average. I did this by taking my rolling average for a particular observation, dividing it by the population of that county and then multiplying it by 100,000. I also did this for state level data. This variable tells me on average how many people per 100,000 caught COVID-19 in a day over the past week. I then used this variable to create my exponential growth rate variable, which is the variable my model is actually going to be tracking.
+
+## Growth Rate
+
+   While the goal of my paper is to estimate what influences the spread of COVID-19 cases, it wasn’t initially clear what I should be using as my response variable. I could just use the number of new cases, but that’s not really what I’m trying to measure. If I had a rolling average of 40 new cases of COVID-19 per capita the week after I implement a new COVID-19 policy that looks like a failure, but if I had 60 cases per capita the week before I implemented that policy then that’s actually really good. So I tried looking at the percentage change in weekly COVID-19 cases, but that didn’t feel quite right. What I ended up settling on is a variable measuring exponential population growth. So if I had X0 cases last week and X1 cases this week, the population growth would be the value of r such that X1 = X0 * e^r. So to calculate the value for CaseGrowthRate, I used the equation (ln(X1) – ln(X0))*100, where X1 is the rolling average of COVID-19 cases this week and X0 is the rolling average of COVID-19 cases from a week ago. While multiplying it by 100 isn't really part of the equation for calculating exponential growth rate, I found it beneficial due to some weird quirks of my model. While changing the scale of this variable shouldn't have any impact on the performance of my model, doing so did significantly improve the accuracy of my model. My guess here is that it's something to do with the significant figures on numbers, which have an unusually significant impact when dealing with the data in my model that has relatively small coefficient due to how important a lot of these numbers since their impact is being converted through this exponential growth equation. Also I feel this is a situation where describing it as a percentage is valid, so multiplying it by 100% makes sense. I then did the same but for the exponential growth between one week from now and two weeks from now in order to create my predicted growth rate variable, which will be my response variable in this data set.
+
+   While I could have used just straight percentage growth here instead, I feel that exponential growth is a more accurate way of tracking the spread of COVID than a raw percentage change due to the nature of how a virus spreads. It also has the advantage of being the same both forwards and backwards. So for instance, let’s say I had 10 cases of COVID-19 one week, 20 cases the next week, and then 10 cases the week after that. If I just used percentage change, a variable representing that as a percent change would mark that as 100% and -50%. However, if I used exponential growth instead, then that would they would be marked as 69.3% and -69.3%. 
+   
+### Hospitals
+
+   One of the larger data sets that I used was a data set tracking what was going on with hospitalizations during the pandemic. I ended up using none of the actual variables from this directly and instead created two new variables for my model.  The first was a variable representing the percentage of hospitals reporting that they were short staffed. This is made by taking the number of hospitals in the state that reported being short staffed and dividing it the number of hospital in the state that were reporting any data to the federal government on COVID-19. It’s worth noting that the number of hospitals in a state reporting COVID-19 data to the government is not equivalent to the total number of hospital in that state since it took a while for some hospitals to report any data and I assume there are some that have still not reported data. However I feel like it is good enough considering that by the time that hospitals started getting short staffed thanks to COVID-19, the vast majority of hospitals had started reporting by the end and I assume the ones that never reported are very few and likely very small.
+
+   The other variable I made out of this data set is a variable representing the percentage of hospital ICU beds in use by people who had COVID-19. This is derived by simply dividing the total number of people in an ICU bed because of COVID-19 by the number of ICU beds total in hospitals reporting data. Similar to the last variable, this isn’t exactly representative of all hospitals since not all hospitals were reporting, especially at the beginning, but I feel that because this is a percent in each hospital rather than a strict binary like “Are you short staffed or not” this variable is still pretty meaningful regardless of the total number of hospitals reporting. 
+
+### Vaccination data
+
+   The data I received on vaccinations contained 6 variables that I ended up using: the percentage of people 65 or older who are vaccinated, the percentage of people who are 18 or older who are vaccinated, the percentage of people vaccinated for all ages the number of people 65 or older who are vaccinated, the number of people 18 or older who are vaccinated, and the number of people vaccinated in total. This data is updated daily and I have it for every county except for Texas, Hawaii, and California counties with less than 20,000 people, which I’ll discuss later. For now, let’s talk about the new variables I made with this data. First I calculated the number of people between 18 and 64 who are vaccinated by subtracting the number of people 18 or over who are vaccinated from the number of people over 65 who are vaccinated.  I then used my age data and population data to create some new variables: The number of people in the county who were unvaccinated, the number of people in the county who were 65 or older and unvaccinated and the number of people in the county who are 18 to 64 and unvaccinated. I am using data in this way rather than just using percentages because using percentages is complicated when dealing with subcategories. I wouldn’t just be able to tell you what the effect of increasing the vaccination rate of people who are 65 years by 10% is because that is going to increase the vaccination rate of everyone by some percentage and I won’t know that percentage without knowing the underlying age data. 
+
+  Next I moved on to state level data. I subtracted the county level total vaccinated population from the state level total vaccinated population and then divided it by the state population minus the county population to effectively create the vaccination rate of the state minus that one county. I then subtracted this rate from the county’s vaccination rate to get their difference. The goal of these two variables is to see how much it matters if a county outperforms or under-performs the rest of the state in vaccinations.
+
+
+### Delta Variant
+
+   The Delta variant of COVID-19 is the primary cause for the reigniting of the pandemic and as a result something I absolutely needed to include. The data I gathered is from the CDC and it tracks the percentage of different variants of COVID-19 across 10 different regions of the country While the CDC does report many different variants and sub-variants of COVID-19, some of which were at one point relevant, I decided that for my data I just needed to group everything into two categories: Delta Variant and non-Delta Variant. So I created a variable measuring the percentage of cases in a region caused by Delta or a Delta sub-variant and added it to my main data frame by using a crosswalk to map each region to a county. Since the CDC only reported variant data a few times a month, I then had to fill in the blanks using a function that interpolated NA values in a vector.
+
+### Testing Data
+
+   Another variable I collected is data on how much total COVID-19 testing each state does and how many of those tests ended up being positive. Using this data, I created two variables that I ended up including in my model. First I created a variable that showed how much testing the state had done in the past week, sort of similar to my rolling average variable although I didn’t divide it by 7. I then divided this number by the state population and multiplied it by 100,000 to get the weekly tests per capita. This is important for my model because testing is an important part of managing to COVID-19 response and not doing enough can lead to things getting really bad before you even really know what’s going on. The second variable I made is a positive test ratio. This variable represents the percentage of tests done in the past week that were positive and it is calculated by diving the number of confirmed cases that week. This is important to my model for the same reasons as my weekly testing rate. If the percentage of positive test results is high, that can mean that not enough tests are being done which is a problem.
+ 
+### Lags and Leads
+
+   Since policy decisions can some time takes a while to kick in and the growth rate of cases might take a while to respond to things, it is necessary to use lags and leads in my model. A lag of a variable is simply that variable but from a specific time frame ago, while a lead is that variable but from a specific time frame in the future. It’s important to remember the “bleed over” effect I talked about before in my section on case growth, where you accidentally end up pulling data from a different county. To avoid this issue when using leads, what you need to do is actually create a data frame that goes beyond where the cutoff point of your model is and base the lead data off of that before trimming it from your data set. So for my expected case growth variable, the variable I’m trying to estimate with my model, I base it off of the difference in cases between 7 days from now and 14 days from now, meaning that I actually to include case data all the way up to September 15th before cutting off it off at September 1st. With lags however, I need to either include data from before where my data starts or infer that it is zero if it’s something that just wasn’t recorded before that point because it didn’t exist, such as the number of weekly tests. My model includes a two week lag on weekly testing per capita variable and my test positive rate, as well as a three day lag on all of my government policy data, and a two week as well as a four week lag on just the C_Sum and H_Sum variables. 
+
+### Powers
+
+  For measuring the impact of current case growth on future case growth, I didn't feel it was appropriate to use a linear data for reasons that will become apparent in the results section. So instead I made it's impact a cubic function that involves both the square of the case growth rate and the cube of case growth rate. Because my case growth rate can already get pretty big, I decided to divide the squared variable by 100 and the cubic variable by 100,000. Since this is just changing the scale of a variable it doesn't have a real influence on the how much it impacts the model, it just makes the numbers easier to deal with. Otherwise I'd have giant variables and tiny coefficients, which can cause some loss of accuracy because it can cause some significant figures get lost just by how small the coefficient would be.
+  
+  
+### Interaction terms
+
+   While this data set does already have a lot of things that technically count as interaction terms, such as per capita data, this section will be discussing interaction terms that aren’t the kind of thing you would ever see outside of the context of a statistical model exploring how different variables interact. Specifically I’m using this to gauge the combined impact of different variables and how they interact with vaccinations. I created variables C_Sum and H_Sum, which are the sums of all the government policy variables surrounding closures and policy variables surrounding healthcare. Closure variables have a C in front of them and healthcare variables have a big H in front of them. Additionally, I also multiplied this variable by the county vaccination rate in order to create a variable with the purpose of seeing how the effect of government policies changes as the vaccination rate changes. 
+
+### Incorrectly entered data
+
+   A noticeable issue I’ve encountered in my data is that for my total case, death and testing data, there would be some instances where data was entered incorrectly and then later changed such that it would create this large spike that would result in the new case/death/testing variable being negative. Not only is this obviously inaccurate in a big way that could seriously through of my model, but if my new case data was negative by a large enough amount that it meant my rolling average was negative, that would make my case growth variable NA and force me to get rid of it from the model. So what I did is that for any variable where this was an issues, I created a list of all the points where it went negative. For cases and deaths I created some code that would basically select a range around a negative point that contained whatever mistake was made. For my testing data the list of negative points was small enough that I did it by hand. Then I would simply modify that data so that it simply followed a linear trend from the start of the range to the end of the range. There are still probably a lot of errors in this data set, but this caught the big ones that I found frustrating and I don't believe there is either a good way of dealing with any remaining issues or that it is a significant enough issue to throw off my data.
+
+### Missing/Removed Data
+
+   As previously mentioned, Hawaii, Texas and California counties with less than 20,000 do not have vaccination data so they have been removed. I might find a way to add these back in, but as of right now that seems fairly unlikely. I’ll go more in detail here when I have finalized what I’m doing here.
+
+   Additionally, I also removed Alaska from my model entirely. This is because the way Alaska is organized is confusing. Instead of counties they have boroughs with different sorts of classes, census areas, many of my data sources break up Alaska in completely different ways. So I thought I should just remove it.
+
+   Lastly, I removed DC from my data because it counts as a “state” in my data but it only has one county and that was causing weird interactions.
+
+   One of the other big reasons why I had to remove a lot of my data from this model is the case growth variable. This variable not only requires data from 1 week ago, but it also requires that there be active new cases in that county during the past week for it to not be considered NA. This removes a lot of the data from early in the pandemic before it had reached everywhere, as well as a lot of data in really small counties. However this isn’t really much of an issue since that data wouldn’t really have much value in my model. Little if any government policies were in place during that time, vaccinations weren’t even being talked about and obviously delta wasn’t a concern. 
+   
+   As previously mentioned, I also removed data where the Delta variant made up over 40% of the cases in the region. Before doing this, both the Delta variant variable and my vaccination variables were having impacts that I felt was far too small. As in half of a county getting vaccinated overnight would barely move the needle on cases. After looking into my data, I determined that this was because a large spike happened because of the Delta variant right in the middle of the vaccination roll out. This was based on minor oddities with my model, such as how my model believed that a senior getting vaccinated had 6 times the impact of a non-senior adult getting vaccinated (although both were still way lower than they should have), which I presumed was because vaccination rates among seniors was significantly less correlated with the Delta variant than vaccinations among adults. The correlation between vaccinations and the delta variant resulted in my model being unable to tell exactly how strong these variables are since they sort of cancelled each other out. I tried various ways of untangling them with interaction terms, lags and powers, but none that I tried worked. So, I decided that my model would stop tracking data for a state once the delta variant in that state reached above 40%, preventing the Delta variant from interfering too much in my model while still giving me a rough idea of what kind of impact Delta has before it truly takes off. This does mean that the picture I get of these both vaccinations and the Delta variant is less full, but I think it is worth it for having less biased results.
+
+
+## Potential Areas of Improvement
+
+As with many research papers, there were a fair amount of stones left unturned that I wish I had gotten to explore some more. However, due to constraints on time, resources and data available, I wasn't able to explore them in this thesis.
+
+   The biggest thing that I wish I had is more cross-tab data, specifically for cases. All my case data told me was how many cases there were. If I had case data that broke down infections by age range and vaccination status, I feel like that would have been very significant to my overall model. And while that data does exist, in doesn't exist on a daily basis for each county so I'd either have to completely overhaul everything I've done for a new scope or interpolate based off of less granular data what those cross tabs for my individual counties on individual days would have looked like. However it's not even really clear if I'd get good results by doing that and since it would have been a massive time investment, I didn't pursue them.
+   
+   Another major area where I wish I had been able to do more was with vaccinations. Both because I had to cut out a very important state from my data as well as several counties and because I wasn't able to untangle the vaccination data from the delta variant data. This is disappointing because by cutting off my data early, I lacked a lot of data on how the pandemic spreads with higher vaccination rates and can't really extrapolate as well for what things would look like at something like a 70% vaccination rate.
+   
+   I also just generally wish I had more precise data in some of the situations where I had only state or regional level data. Mainly my government response variables (which didn't have data on policies implemented by city/county governments) and my regional Delta variant data. However there was really no solution here that would not have required a lot more work than I was prepared to do during the time frame I was given, so it was a somewhat necessary loss.  
+   
+   Something else I would have liked to play around with more was the scaling/type of my government response variables. As I previous stated, this data is treated as numeric when it is stored as categorical, and that could potentially create discrepancies between what the impact a change in policy actually is and what my model says the impact is. However, there are ways around this. First, I could treat these variables as categorical without actually using categorical variables by creating dummy variables. Problem with this is that it means creating 34 variables just for my base policies without looking at their lagged counterparts and that wouldn't work for my summed variables. The other option is that I create some sort of scale for each of the variables so that instead of being listed as a 0, 1, 2, 3 or 4, it's listed as a value that is an appropriate scale for the impact of each level of the variable. However I was never able to figure out a good way to calculate what those values should be in a way that wasn't biased.
+   
+   I also think there is room to explore models similar to this one in purpose but for a different scenario or scope. You could look at other or multiple countries, you could look at just state level data rather than county, you could look at weekly data instead of daily, you could look at deaths or hospitalizations instead of cases, you could look at data a month from now rather than 7-14 days from now, etc. However doing that would have required fairly significant overhauls of my model that I did not have time for, so it is best suited for a separate project.
+   
+   Lastly, I would not be surprised if there were some minor errors lurking in my data. This data set is massive and has been through many revisions and iterations, so it is impossible for me to guarantee there aren't any mistakes in here that would skew the data. If any do come to my attention after the completion of this thesis and I have the time to adjust it, an updated version will be added to my github with an explanation for what was fixed. However, I don't think any of these mistakes would be something significant enough to throw off my model in a really meaningful way or detract from the big picture.
+   
+   While there are likely many more options out there to be discussed, however I think we should now bring it back to what I actually did and turn to look at the type of model I picked for my data.
+   
+## Modeling 
+
+### OLS model
+
+   When dealing with statistical models, the default option is a linear regression, or Ordinary Least Squares (OLS). The way OLS works is that it calculates the coefficients for your model that would result in the the smallest sum of squared residuals for your model (a residual is the difference between the value your model predictions and what the true value is). While a linear regression is perfectly fine in many situations, there are instances where it is simply not up to the task, as was the case with my data. The big problem I ran into when trying creating a linear model off of this data is that it is all highly correlated. In general, methods of dealing with the COVID-19 pandemic are implemented in response to rising COVID-19 case numbers and multiple different methods will be implemented at once, meaning that they all tend to rise and fall together. This means that an OLS regression on my data would be overfitted, or extremely sensitive to small changes in data because it tries too hard to make the residuals small and it ends up creating an extremely jittery model where many of the coefficients are more influenced by random noise than they are underlying trends. For example, early on I ran an OLS regression where the coefficient for the variable measuring school closings was positive and statistically significant. When I changed the lag that variable was using, it changed to being negative and statistically significant. But when I changed the lag another variable was using, the coefficient for school closings went back to being positive and statistically significant. This is a clear case overfitting, so I decided the best course of action was to switch from an OLS regression to a ridge regression.
+
+### Ridge regression
+
+   A ridge regression is a particular type of regression model generally used when dealing with variables that are highly correlated. How it works is similar to a regular OLS model, but it imposes an additional penalty based on the sums of the squares of my coefficients. This value is multiplied by some value lambda to determine how big the penalty is. What this does is that it discourages your model from assigning to too large of a coefficient to a variable unless it has a really good reason to. This is good because it effectively spreads the impact of highly correlated variables out over each other rather than trying to account for all these small variations in my data by assigning large coefficients that counteract each other to some degree in order to create a more jittery prediction that is overfitted to the random noise in my data. Theoretically I could have used a LASSO regression here instead, which is basically the same except it uses the absolute value of coefficients instead of their squares, but I decided against that. If the impact of a variable is small the a LASSO regression will just outright set the coefficient of that variable to zero, while a ridge regression won't thanks to how squaring small numbers with an absolute value less than 1 works. Because I have the impact of my stuff like government interventions and vaccinations spread out over many variables, I don't want a LASSO model picking off small parts of it just because the impact of that part is small despite proportionally being very impactful for how big of a piece of the overall pie it is.
+
+
+   The downside of ridge regression is that it does not give me things such as p-values or a confidence interval that I could use to discuss the likelihood of certain variables having no correlation with expected case growth. However, I don’t think that’s too big of a deal because I’m not really setting out to prove a relationship here. At least not for the main variables I’m going to be discussing. For many of these variables, such as the rise in the delta variant, vaccinations, or the government policies I’ve included, it is either already proven that these variables do have a statistically significant impact on the spread of COVID or it’s just so obvious that no one has bothered to try and prove that. Their impact is a given and not something I would want to go out of my way to prove, I’m more interested in exactly how big the impact is. And while it would be nice to have 95% confidence intervals for my model’s coefficients, it's not worth the costs of using a linear regression. I could remove a lot of the variables in my model to prevent overfitting concerns, but that means either tossing out data that I know for a fact is relevant and will remain lurking in my model just with other closely correlated variables as proxies. Additionally, it is less the specific values I am interested in and more the general trends of my data and it's implications. Ultimately I think ridge regression is the best option I have. So let's look at what I used this regression to create. 
